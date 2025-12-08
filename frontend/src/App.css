@@ -20,8 +20,7 @@
 
 .camera-container {
   position: relative;
-  /* Fixed size for demo stability, or use width: 100% max-width... */
-  width: 640px; 
+  width: 640px;
   height: 480px;
   border-radius: 12px;
   overflow: hidden;
@@ -32,7 +31,7 @@
 .camera-video {
   width: 100%;
   height: 100%;
-  object-fit: cover; 
+  object-fit: cover;
 }
 
 .camera-overlay {
@@ -58,9 +57,60 @@
 }
 
 .connected {
-  color: #4ade80; /* bright green */
+  color: #4ade80;
 }
 
 .disconnected {
-  color: #f87171; /* bright red */
+  color: #f87171;
+}
+
+/* New Controls */
+.controls-overlay {
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.btn-enable-audio {
+  background-color: #2563eb;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 25px;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+  transition: background-color 0.2s;
+}
+
+.btn-enable-audio:hover {
+  background-color: #1d4ed8;
+}
+
+.speaking-indicator {
+  background-color: rgba(0, 0, 0, 0.6);
+  color: #fff;
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 14px;
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }

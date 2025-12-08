@@ -7,6 +7,13 @@ const CameraView = () => {
     const [isConnected, setIsConnected] = useState(false);
     const wsRef = useRef(null);
 
+    // Audio state
+    const [isAudioEnabled, setIsAudioEnabled] = useState(false);
+    const [lastSpoken, setLastSpoken] = useState("");
+
+    // Detection state
+    const [isDetecting, setIsDetecting] = useState(false);
+
     useEffect(() => {
         // Init Camera
         const startCamera = async () => {
@@ -61,9 +68,11 @@ const CameraView = () => {
             clearInterval(intervalId);
             if (wsRef.current) wsRef.current.close();
         };
-    }, []);
+    }, [isAudioEnabled, isDetecting]); // Re-bind if audio/detection state changes
 
     const sendFrame = () => {
+        // Gate detection by state
+        if (!isDetecting) return;
         if (!videoRef.current || !wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) return;
 
         const video = videoRef.current;
@@ -96,6 +105,7 @@ const CameraView = () => {
         const ctx = canvas.getContext('2d');
         ctx.clearRect(0, 0, canvas.width, canvas.height);
 
+        // Only draw if we are supposedly detecting
         detections.forEach(det => {
             const [x1, y1, x2, y2] = det.bbox;
             const label = det.label;
@@ -119,15 +129,47 @@ const CameraView = () => {
         });
     };
 
-    const announceDetections = (detections) => {
-        // Sort by confidence
-        detections.sort((a, b) => b.score - a.score);
+    const enableAudio = () => {
+        setIsAudioEnabled(true);
+        announcer.speak("Âm thanh đã được bật");
+    };
 
-        detections.forEach(det => {
-            if (det.score > 0.6) {
-                announcer.announce(det.label);
-            }
-        });
+    const startDetection = () => {
+        setIsDetecting(true);
+        announcer.speak("Bắt đầu nhận diện");
+    }
+
+    const stopDetection = () => {
+        setIsDetecting(false);
+        announcer.speak("Kết thúc nhận diện");
+        // Clear canvas
+        const canvas = canvasRef.current;
+        if (canvas) {
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+        }
+    }
+
+    const announceDetections = (detections) => {
+        if (!isAudioEnabled) return;
+
+        // Collect all distinct labels with high confidence
+        const highConfDetections = detections.filter(d => d.score > 0.5);
+        if (highConfDetections.length === 0) return;
+
+        // Get unique labels only
+        const labels = [...new Set(highConfDetections.map(d => d.label))];
+
+        // Pass list to announcer
+        announcer.announce(labels);
+
+        // Update last spoken visual indicator (show most confident or just list)
+        // For UI, let's show the top one or join them? Joining them might be too long.
+        // Let's just show the top scoring one for the UI "Speaking..." text
+        const topDet = highConfDetections.sort((a, b) => b.score - a.score)[0];
+        if (topDet) {
+            setLastSpoken(topDet.label);
+        }
     };
 
     return (
@@ -143,6 +185,33 @@ const CameraView = () => {
                 ref={canvasRef}
                 className="camera-overlay"
             />
+
+            <div className="controls-overlay">
+                {!isAudioEnabled && (
+                    <button className="btn-enable-audio" onClick={enableAudio}>
+                        🔊 Bật Âm Thanh
+                    </button>
+                )}
+
+                <div className="detection-controls" style={{ marginTop: '10px' }}>
+                    {!isDetecting ? (
+                        <button className="btn-start" onClick={startDetection} style={{ backgroundColor: '#00cc00', color: 'white', padding: '10px 20px', border: 'none', borderRadius: '5px', marginRight: '10px', fontSize: '16px' }}>
+                            ▶ Bắt đầu
+                        </button>
+                    ) : (
+                        <button className="btn-stop" onClick={stopDetection} style={{ backgroundColor: '#cc0000', color: 'white', padding: '10px 20px', border: 'none', borderRadius: '5px', marginRight: '10px', fontSize: '16px' }}>
+                            ⏹ Kết thúc
+                        </button>
+                    )}
+                </div>
+
+                {isAudioEnabled && lastSpoken && (
+                    <div className="speaking-indicator">
+                        Đang nói: {lastSpoken}
+                    </div>
+                )}
+            </div>
+
             <div className={`status-indicator ${isConnected ? 'connected' : 'disconnected'}`}>
                 {isConnected ? '● Máy chủ: Đã kết nối' : '○ Máy chủ: Đang kết nối...'}
             </div>

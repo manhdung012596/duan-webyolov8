@@ -7,6 +7,9 @@ from ultralytics import YOLO
 from translations import COCO_TRANSLATIONS
 import asyncio
 import json
+from gtts import gTTS
+from io import BytesIO
+from fastapi.responses import StreamingResponse
 
 app = FastAPI()
 
@@ -17,6 +20,21 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+@app.get("/tts")
+async def tts_endpoint(text: str):
+    """
+    Generate Vietnamese TTS audio
+    """
+    try:
+        mp3_fp = BytesIO()
+        tts = gTTS(text=text, lang='vi')
+        tts.write_to_fp(mp3_fp)
+        mp3_fp.seek(0)
+        return StreamingResponse(mp3_fp, media_type="audio/mpeg")
+    except Exception as e:
+        print(f"TTS Error: {e}")
+        return {"error": str(e)}
 
 # Load model
 model = YOLO("yolov8n.pt")
@@ -70,6 +88,8 @@ async def websocket_endpoint(websocket: WebSocket):
                     })
             
             # Send results back
+            if detections:
+                print(f"Sending detections: {detections}")
             await websocket.send_json({"detections": detections})
 
     except WebSocketDisconnect:
