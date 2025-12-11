@@ -1,3 +1,5 @@
+import { getApiUrl } from './config';
+
 class VoiceAnnouncer {
     constructor() {
         this.lastSeen = {}; // Map of label -> timestamp (last time appeared in frame)
@@ -57,7 +59,8 @@ class VoiceAnnouncer {
         const text = this.audioQueue.shift();
 
         console.log("Playing:", text);
-        const url = `http://localhost:8000/tts?text=${encodeURIComponent(text)}&t=${Date.now()}`;
+        const baseUrl = getApiUrl();
+        const url = `${baseUrl}/tts?text=${encodeURIComponent(text)}&t=${Date.now()}`;
 
         const audio = new Audio(url);
 

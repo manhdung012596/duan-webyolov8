@@ -1,5 +1,6 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { announcer } from './VoiceAnnouncer';
+import { getWsUrl } from './config';
 
 const CameraView = () => {
     const videoRef = useRef(null);
@@ -38,8 +39,8 @@ const CameraView = () => {
 
         // Init WebSocket
         const connectWs = () => {
-            // Assuming backend is on localhost:8000
-            const ws = new WebSocket('ws://localhost:8000/ws/detect');
+            const wsBaseUrl = getWsUrl();
+            const ws = new WebSocket(`${wsBaseUrl}/ws/detect`);
             ws.onopen = () => {
                 console.log("WebSocket connected");
                 setIsConnected(true);
